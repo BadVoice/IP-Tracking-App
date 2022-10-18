@@ -13,17 +13,20 @@
         </h1>
         <div class="flex">
           <input 
+          v-model="queryIp"
             class="flex-1 py-3 px-2 rounded-tl-md rounded-bl-md focus:outline-none" type="text" 
             placeholder="Search for any IP address pr leave empty to get your ip info" />
-            <i class="
-            cursor-pointer bg-black text-white px-4 rounded-tr-md
-            rounded-br-md 
-            fas fa-solid fa-chevron-right 
-            flex items-center "></i>
+            <i 
+              @click="getIpInfo"
+              class="
+              cursor-pointer bg-black text-white px-4 rounded-tr-md
+              rounded-br-md 
+              fas fa-solid fa-chevron-right 
+              flex items-center "></i>
         </div>
       </div>
 <!-- IP Info--> 
-      <IPInfo />
+      <IPInfo v-if="ipInfo" :ipInfo="ipInfo"/>
     </div>
 
 <!-- Map -->
@@ -35,8 +38,14 @@
 <script setup>
 import IPInfo from '../components/IPInfo.vue';
 import leaflet from 'leaflet'
-import { onMounted } from '@vue/runtime-core';
+import { onMounted, reactive, ref } from '@vue/runtime-core';
 
+
+const queryIp = ref("")
+const ipInfo = ref(null)
+
+
+//at_16KXaotAiEZNK2yZYbqNGTXOzqurp
 let mymap;
 
   onMounted(() => {
@@ -56,9 +65,28 @@ let mymap;
         )
         .addTo(mymap);
   
-      })
+      });
 
-        
-
+  async function getIpInfo() {
+    try {
+      const data = await axios.get(`
+      https://geo.ipify.org/api/v2/country?apiKey=at_16KXaotAiEZNK2yZYbqNGTXOzqurp&ipAddress=${queryIp.value}`)
+      const result = data.data;
+      comnsole.log(result)
+      ipInfo.value = {
+        address: result.ip,
+        state: result.location.region,
+        timezone: result.location.timezone,
+        isp: result.isp,
+        lat: result.location.lat,
+        lng: result.location.lng,
+      };
+      leaflet.marker([ipInfo.value.lat, ipInfo.value.lng]).addTo(mymap);
+        mymap.setView([ipInfo.value.lat, ipInfo.value.lng], 13);
+    } catch(err) {
+      alert(err.message)
+    }
+  }
+  
 </script>
 
